@@ -1,0 +1,123 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - pom.xml
+      - src/main/resources/plugin.yml
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: simplespawn-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Validate release version
+        id: version
+        shell: python
+        run: |
+          import os, re, xml.etree.ElementTree as ET
+          from pathlib import Path
+          root = ET.parse('pom.xml').getroot()
+          version = root.findtext('{http://maven.apache.org/POM/4.0.0}version', '').strip()
+          if not re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', version):
+              raise SystemExit('Release version must be a stable X.Y.Z number, without SNAPSHOT.')
+          manifest = Path('src/main/resources/plugin.yml').read_text()
+          match = re.search(r'^version:\s*[\'\"]?([^\s\'\"]+)[\'\"]?\s*$', manifest, re.M)
+          if not match or match.group(1) != version:
+              raise SystemExit('pom.xml and plugin.yml versions must match.')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'version={version}\ntag=v{version}\njar=target/SimpleSpawn-{version}.jar\n')
+
+      - name: Check for existing release
+        id: existing
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          pages = json.loads(Path(os.environ['RUNNER_TEMP'], 'releases.json').read_text())
+          release = next((r for page in pages for r in page if r['tag_name'] == os.environ['TAG']), None)
+          exists = release is not None
+          published = exists and not release['draft']
+          if exists and not published and release['target_commitish'] != os.environ['GITHUB_SHA']:
+              raise SystemExit('Existing draft targets a different commit; review it before retrying.')
+          # Never silently publish an unrelated pre-existing tag.
+          tag = subprocess.run(['git', 'rev-parse', '--verify', f"refs/tags/{os.environ['TAG']}^{{commit}}"], capture_output=True, text=True)
+          if not published and tag.returncode == 0 and tag.stdout.strip() != os.environ['GITHUB_SHA']:
+              raise SystemExit('Existing tag points to a different commit; choose a new version.')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'exists={str(exists).lower()}\npublished={str(published).lower()}\n')
+          if published:
+              print('This version is already published; leaving its release and assets unchanged.')
+          PY
+
+      - uses: actions/setup-java@v6.1.0
+        if: steps.existing.outputs.published != 'true'
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build plugin
+        if: steps.existing.outputs.published != 'true'
+        run: mvn --batch-mode --no-transfer-progress clean verify
+
+      - name: Verify packaged plugin and prepare notes
+        if: steps.existing.outputs.published != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          JAR: ${{ steps.version.outputs.jar }}
+        shell: python
+        run: |
+          import hashlib, os, re, zipfile
+          from pathlib import Path
+          jar = Path(os.environ['JAR'])
+          with zipfile.ZipFile(jar) as archive:
+              assert 'local/simplespawn/SimpleSpawn.class' in archive.namelist(), 'Missing plugin class'
+              manifest = archive.read('plugin.yml').decode()
+              assert re.search(r'^version:\s*' + re.escape(os.environ['VERSION']) + r'\s*$', manifest, re.M), 'Wrong packaged version'
+              assert "api-version: '26.3'" in manifest, 'Wrong Paper API version'
+          checksum = hashlib.sha256(jar.read_bytes()).hexdigest()
+          Path(str(jar) + '.sha256').write_text(f'{checksum}  {jar.name}\n')
+          notes = Path('RELEASE-NOTES.md').read_text()
+          Path(os.environ['RUNNER_TEMP'], 'release-notes.md').write_text(notes)
+
+      - name: Create draft release
+        if: steps.existing.outputs.published != 'true' && steps.existing.outputs.exists != 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release create "$TAG" --draft --target "$GITHUB_SHA" \
+            --title "SimpleSpawn $TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
+
+      - name: Attach verified files and publish
+        if: steps.existing.outputs.published != 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          JAR: ${{ steps.version.outputs.jar }}
+        run: |
+          gh release upload "$TAG" "$JAR" "$JAR.sha256" --clobber
+          gh release edit "$TAG" --draft=false --latest \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
+          echo "Published [$TAG](https://github.com/$GH_REPO/releases/tag/$TAG)" >> "$GITHUB_STEP_SUMMARY"
