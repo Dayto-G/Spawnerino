@@ -1,16 +1,16 @@
 name: SimpleSpawn
-version: 1.1.0
+version: 1.2.0
 main: local.simplespawn.SimpleSpawn
 api-version: '26.3'
 description: Set a persistent world spawn and restore the previous spawn.
 commands:
   setspawn:
     description: Set world spawn using your position or coordinates and look angles.
-    usage: /setspawn [x y z [yaw [pitch]]]
+    usage: 'Player: /setspawn [x y z [yaw [pitch]]] | Console/RCON: setspawn <world> <x> <y> <z> [yaw [pitch]]'
     permission: simplespawn.setspawn
   deletespawn:
     description: Restore this world's previous spawn.
-    usage: /deletespawn
+    usage: 'Player: /deletespawn | Console/RCON: deletespawn <world>'
     permission: simplespawn.setspawn
 permissions:
   simplespawn.setspawn:

@@ -7,7 +7,7 @@ Minimal world-spawn plugin. No `/spawn` command is included.
 ## Install
 
 1. Run Paper **26.3** with **Java 25 or newer**.
-2. Put `SimpleSpawn-1.1.0.jar` in the server's `plugins` folder.
+2. Put `SimpleSpawn-1.2.0.jar` in the server's `plugins` folder.
 3. Restart the server.
 4. As an operator, stand at a safe location and run `/setspawn`.
 
@@ -21,7 +21,7 @@ Minimal world-spawn plugin. No `/spawn` command is included.
 - Yaw: `0` south, `90` west, `-90` east, `180` north. Pitch: `0` level, `-90` straight up, `90` straight down. Yaw wraps automatically; pitch must be between -90 and 90.
 - `/deletespawn`: restore the spawn that existed before the first `/setspawn` in this world. Repeating `/setspawn` preserves that original backup.
 - Both require `simplespawn.setspawn`, granted to operators by default. With LuckPerms: `/lp user PLAYER permission set simplespawn.setspawn true`.
-- Both commands must be run by a player. `/deletespawn` takes no arguments.
+- In game, `/deletespawn` takes no arguments. Console and RCON commands require a loaded world name as the first argument.
 
 Examples:
 
@@ -31,6 +31,18 @@ Examples:
 /setspawn ~ ~ ~ 90 -15
 /setspawn ~10 ~ ~-5
 ```
+
+### Console and RCON
+
+Use these commands without a leading slash in the server console or RCON:
+
+```text
+setspawn world 100 67 99 26 2
+setspawn world 100 67 99
+deletespawn world
+```
+
+Replace `world` with the loaded world's name (for example `world_nether`). Coordinates are mandatory and absolute; `~` and local `^` coordinates require a player context and are not accepted from console/RCON. Omitted yaw and pitch keep the selected world's existing spawn angles. Unknown or unloaded worlds are rejected. Console/RCON retain the same permission check. Command blocks and other non-player senders are not supported.
 
 X and Z block positions must be between -29999984 and 29999984, and Y must be within the current world's build limits. Invalid inputs leave the saved spawn unchanged. These checks do not guarantee safe terrain or that a location is inside a custom world border.
 
@@ -46,7 +58,7 @@ Install JDK 25+ and Maven 3.9+, then run from this folder:
 mvn clean package
 ```
 
-Output: `target/SimpleSpawn-1.1.0.jar`. Paper API is provided by the server and is not bundled.
+Output: `target/SimpleSpawn-1.2.0.jar`. Paper API is provided by the server and is not bundled.
 
 The project pins the verified published API `io.papermc.paper:paper-api:26.3.build.230-stable` and declares `api-version: '26.3'`. The compiler targets Java 25.
 
@@ -58,7 +70,8 @@ The project pins the verified published API `io.papermc.paper:paper-api:26.3.bui
 4. Run `/setspawn` at a second location, then `/deletespawn`; confirm the original spawn is restored, including after restarting.
 5. Run `/deletespawn` again; expect the no-saved-spawn message.
 6. Repeat in another world; confirm entries are independent.
-7. Try the commands from the console; expect the in-game-only message.
+7. From console or RCON, run `setspawn world 100 67 99 26 2`, restart, and check persistence. Run `deletespawn world` to check restoration.
+10. From RCON, try a missing world name, unknown world, and relative coordinates; confirm no saved spawn changes.
 8. Try explicit and relative coordinates and look angles, then restart and check persistence.
 9. Try incomplete arguments, `NaN`, out-of-range Y, and pitch `91`; confirm the saved spawn stays unchanged.
 

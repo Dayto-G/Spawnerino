@@ -2,6 +2,18 @@ package local.simplespawn;
 
 /** Parses command input without changing the world or touching saved data. */
 record SpawnPosition(int x, int y, int z, float yaw, float pitch) {
+    static SpawnPosition parseConsole(String[] args, float yaw, float pitch, int minY, int maxY) {
+        if (args.length < 3 || args.length > 5) {
+            throw new IllegalArgumentException("Usage: setspawn <world> <x> <y> <z> [yaw [pitch]]");
+        }
+        for (int i = 0; i < 3; i++) {
+            if (args[i].startsWith("~")) {
+                throw new IllegalArgumentException("Console/RCON requires absolute coordinates; ~ needs a player position.");
+            }
+        }
+        return parse(args, 0, 0, 0, yaw, pitch, minY, maxY);
+    }
+
     static SpawnPosition parse(String[] args, double baseX, double baseY, double baseZ,
                                float baseYaw, float basePitch, int minY, int maxY) {
         if (args.length != 0 && args.length != 3 && args.length != 4 && args.length != 5) {

@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Locale;
+import java.util.Arrays;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.RemoteConsoleCommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -70,35 +73,57 @@ public final class SimpleSpawn extends JavaPlugin implements Listener {
             sender.sendMessage("You do not have permission to manage spawn.");
             return true;
         }
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("Run this command in game.");
+        boolean deleting = command.getName().equalsIgnoreCase("deletespawn");
+        World world;
+        Location current;
+        String[] coordinates;
+        boolean fromPlayer = sender instanceof Player;
+        if (sender instanceof Player player) {
+            world = player.getWorld();
+            current = player.getLocation();
+            coordinates = args;
+            if (deleting && args.length != 0) return false;
+        } else if (sender instanceof ConsoleCommandSender || sender instanceof RemoteConsoleCommandSender) {
+            if ((deleting && args.length != 1) || (!deleting && (args.length < 4 || args.length > 6))) {
+                sender.sendMessage(deleting ? "Usage: deletespawn <world>"
+                        : "Usage: setspawn <world> <x> <y> <z> [yaw [pitch]]");
+                return true;
+            }
+            world = getServer().getWorld(args[0]);
+            if (world == null) {
+                sender.sendMessage("World is not loaded: " + args[0]);
+                return true;
+            }
+            current = world.getSpawnLocation();
+            coordinates = Arrays.copyOfRange(args, 1, args.length);
+        } else {
+            sender.sendMessage("Run this command as a player, from the server console, or through RCON.");
             return true;
         }
-        World world = player.getWorld();
         String path = key(world);
-        boolean deleting = command.getName().equalsIgnoreCase("deletespawn");
-        if (deleting && args.length != 0) return false;
         if (deleting && !data.isConfigurationSection(path + ".original")) {
-            player.sendMessage("This world has no spawn set by SimpleSpawn.");
+            sender.sendMessage("This world has no spawn set by SimpleSpawn.");
             return true;
         }
         Location target;
         if (deleting) {
             target = readLocation(path + ".original", world);
         } else {
-            Location current = player.getLocation();
             try {
-                SpawnPosition position = SpawnPosition.parse(args, current.getX(), current.getY(), current.getZ(),
-                        current.getYaw(), current.getPitch(), world.getMinHeight(), world.getMaxHeight());
+                SpawnPosition position = fromPlayer
+                        ? SpawnPosition.parse(coordinates, current.getX(), current.getY(), current.getZ(),
+                                current.getYaw(), current.getPitch(), world.getMinHeight(), world.getMaxHeight())
+                        : SpawnPosition.parseConsole(coordinates, current.getYaw(), current.getPitch(),
+                                world.getMinHeight(), world.getMaxHeight());
                 target = new Location(world, position.x(), position.y(), position.z(), position.yaw(), position.pitch());
             } catch (IllegalArgumentException e) {
-                player.sendMessage(e.getMessage());
+                sender.sendMessage(e.getMessage());
                 return true;
             }
         }
         Location before = world.getSpawnLocation();
         if (!world.setSpawnLocation(target)) {
-            player.sendMessage("Could not change this world's spawn.");
+            sender.sendMessage("Could not change this world's spawn.");
             return true;
         }
         String snapshot = data.saveToString();
@@ -113,15 +138,15 @@ public final class SimpleSpawn extends JavaPlugin implements Listener {
         } catch (IOException e) {
             world.setSpawnLocation(before);
             try { data.loadFromString(snapshot); } catch (Exception impossible) { getLogger().severe(impossible.toString()); }
-            player.sendMessage("Could not save spawn; the change was undone. Check the server log.");
+            sender.sendMessage("Could not save spawn; the change was undone. Check the server log.");
             getLogger().severe("Could not save spawns.yml: " + e.getMessage());
             return true;
         }
         // Persist the vanilla spawn as well, including when deleting our override.
         world.save();
-        player.sendMessage(deleting ? "Previous world spawn restored." : String.format(Locale.ROOT,
-                "World spawn saved at %d %d %d (yaw %.1f, pitch %.1f).",
-                target.getBlockX(), target.getBlockY(), target.getBlockZ(), target.getYaw(), target.getPitch()));
+        sender.sendMessage(deleting ? "Previous spawn restored for " + world.getName() + "." : String.format(Locale.ROOT,
+                "Spawn saved for %s at %d %d %d (yaw %.1f, pitch %.1f).",
+                world.getName(), target.getBlockX(), target.getBlockY(), target.getBlockZ(), target.getYaw(), target.getPitch()));
         return true;
     }
 }
