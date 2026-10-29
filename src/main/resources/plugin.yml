@@ -1,0 +1,18 @@
+name: SimpleSpawn
+version: 1.0.0
+main: local.simplespawn.SimpleSpawn
+api-version: '26.3'
+description: Set a persistent world spawn and restore the previous spawn.
+commands:
+  setspawn:
+    description: Set this world's spawn to your position.
+    usage: /setspawn
+    permission: simplespawn.setspawn
+  deletespawn:
+    description: Restore this world's previous spawn.
+    usage: /deletespawn
+    permission: simplespawn.setspawn
+permissions:
+  simplespawn.setspawn:
+    description: Allows setting and deleting world spawns.
+    default: op

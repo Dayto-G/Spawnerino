@@ -1,0 +1,7 @@
+Build verified on 2026-10-29.
+Result: Maven BUILD SUCCESS, compiled against the actual published Paper API
+io.papermc.paper:paper-api:26.3.build.230-stable.
+Compiler: JDK 26.0.2 with --release 25 (class major version 69).
+JAR contents inspected: plugin.yml and local/simplespawn/SimpleSpawn.class present.
+No Paper API or other dependency classes bundled.
+No live server/player gameplay tests performed. Manual checks are in README.md.
