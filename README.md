@@ -2,7 +2,7 @@
 
 Minimal world-spawn plugin. No `/spawn` command is included.
 
-[Download SimpleSpawn-1.0.0.jar](https://github.com/Dayto-G/SimpleSpawn/raw/refs/heads/main/downloads/SimpleSpawn-1.0.0.jar)
+[Download the latest release](https://github.com/Dayto-G/SimpleSpawn/releases/latest)
 
 ## Install
 
@@ -54,3 +54,11 @@ The project pins the verified published API `io.papermc.paper:paper-api:26.3.bui
 ## Verification
 
 See `BUILD-VERIFICATION.txt` for the build result. Live gameplay checks require a Paper server and player session.
+
+## Automatic releases
+
+The `Build and release` workflow runs on `main` when `pom.xml`, `plugin.yml`, or the workflow changes. It also supports manual runs from Actions. An unpublished stable version (`X.Y.Z`) is built with Java 25 and published as `vX.Y.Z`, with a JAR and SHA-256 checksum. Published versions are skipped and never overwritten.
+
+For the next release, update the version in **both** `pom.xml` and `src/main/resources/plugin.yml`, update `RELEASE-NOTES.md` for the change (including testing status), and commit them together to `main`. The initial workflow installation publishes v1.0.0. The job uses GitHub's built-in token with repository contents write permission; no extra token secret is required.
+
+If publishing fails after creating a draft, rerun the same workflow run to resume it. A draft or tag belonging to a different commit is rejected for review. Build details and failures are available under Actions. Gameplay testing remains a separate manual check.
