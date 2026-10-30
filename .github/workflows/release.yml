@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: simplespawn-release
+  group: spawnerino-release
   cancel-in-progress: false
 
 jobs:
@@ -45,7 +45,7 @@ jobs:
           if not match or match.group(1) != version:
               raise SystemExit('pom.xml and plugin.yml versions must match.')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              output.write(f'version={version}\ntag=v{version}\njar=target/SimpleSpawn-{version}.jar\n')
+              output.write(f'version={version}\ntag=v{version}\njar=target/Spawnerino-{version}.jar\n')
 
       - name: Check for existing release
         id: existing
@@ -109,7 +109,7 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           gh release create "$TAG" --draft --target "$GITHUB_SHA" \
-            --title "SimpleSpawn $TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
+            --title "Spawnerino $TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Attach verified files and publish
         if: steps.existing.outputs.published != 'true'

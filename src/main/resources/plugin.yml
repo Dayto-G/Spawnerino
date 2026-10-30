@@ -1,5 +1,5 @@
-name: SimpleSpawn
-version: 1.2.0
+name: Spawnerino
+version: 1.3.0
 main: local.simplespawn.SimpleSpawn
 api-version: '26.3'
 description: Set a persistent world spawn and restore the previous spawn.
@@ -7,12 +7,17 @@ commands:
   setspawn:
     description: Set world spawn using your position or coordinates and look angles.
     usage: 'Player: /setspawn [x y z [yaw [pitch]]] | Console/RCON: setspawn <world> <x> <y> <z> [yaw [pitch]]'
-    permission: simplespawn.setspawn
+    permission: spawnerino.setspawn
   deletespawn:
     description: Restore this world's previous spawn.
     usage: 'Player: /deletespawn | Console/RCON: deletespawn <world>'
-    permission: simplespawn.setspawn
+    permission: spawnerino.setspawn
 permissions:
-  simplespawn.setspawn:
+  spawnerino.setspawn:
     description: Allows setting and deleting world spawns.
     default: op
+  simplespawn.setspawn:
+    description: Legacy SimpleSpawn permission, retained for existing setups.
+    default: op
+    children:
+      spawnerino.setspawn: true

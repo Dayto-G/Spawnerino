@@ -1,13 +1,7 @@
-SimpleSpawn 1.2.0 verified on 2026-10-29.
-Result: Maven clean verify BUILD SUCCESS against Paper API 26.3.build.230-stable.
-Compiler: JDK 26.0.2, targeting Java 25.
-Tests: 14 run, 0 failures, 0 errors, 0 skipped.
-Coverage: current/explicit/relative positions, negative coordinate flooring,
-yaw wrapping, optional pitch, pitch limits, world height, world coordinate
-limits, incomplete arguments, NaN, infinity, overflow, and malformed inputs.
-Console tests additionally cover absolute coordinates, omitted angle defaults,
-relative-coordinate rejection on all three axes, and missing/extra arguments.
-Pitch is serialized alongside yaw; old entries default to pitch 0.
-Paper CraftWorld.setSpawnLocation(Location) passes both yaw and pitch to spawn data:
-https://github.com/PaperMC/Paper/blob/main/paper-server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-No live server/player/RCON tests performed. Manual checks are in README.md.
+Spawnerino 1.3.0 verified on 2026-10-30.
+Maven clean verify: BUILD SUCCESS; Paper API 26.3.build.230-stable.
+Compiler: JDK 26.0.2 targeting Java 25.
+19 tests passed (14 coordinate/console tests, 5 migration tests).
+Migration preserves old data and original-spawn backups, never overwrites an
+existing destination, skips missing legacy data, and reports copy failures.
+No live server/player/RCON testing performed.

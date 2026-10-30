@@ -24,9 +24,18 @@ public final class SimpleSpawn extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        if (getServer().getPluginManager().getPlugin("SimpleSpawn") != null) {
+            getLogger().severe("Remove the old SimpleSpawn JAR and restart before using Spawnerino.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
         file = new File(getDataFolder(), "spawns.yml");
         data = new YamlConfiguration();
         try {
+            File legacy = new File(getDataFolder().getParentFile(), "SimpleSpawn/spawns.yml");
+            if (SpawnDataMigration.copyIfMissing(legacy.toPath(), file.toPath())) {
+                getLogger().info("Copied existing SimpleSpawn spawn data into Spawnerino; the original file is unchanged.");
+            }
             if (file.exists()) data.load(file);
         } catch (Exception e) {
             getLogger().severe("Cannot read spawns.yml; disabling to protect saved spawns: " + e.getMessage());
@@ -69,7 +78,7 @@ public final class SimpleSpawn extends JavaPlugin implements Listener {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("simplespawn.setspawn")) {
+        if (!sender.hasPermission("spawnerino.setspawn") && !sender.hasPermission("simplespawn.setspawn")) {
             sender.sendMessage("You do not have permission to manage spawn.");
             return true;
         }
@@ -102,7 +111,7 @@ public final class SimpleSpawn extends JavaPlugin implements Listener {
         }
         String path = key(world);
         if (deleting && !data.isConfigurationSection(path + ".original")) {
-            sender.sendMessage("This world has no spawn set by SimpleSpawn.");
+            sender.sendMessage("This world has no spawn set by Spawnerino.");
             return true;
         }
         Location target;

@@ -1,40 +1,34 @@
-# SimpleSpawn for Paper 26.3
+# Spawnerino for Paper 26.3
 
-Minimal world-spawn plugin. No `/spawn` command is included.
+Previously named SimpleSpawn. A minimal persistent world-spawn plugin with coordinate, look-direction, console, and RCON support. No `/spawn` command is included.
 
-[Download the latest release](https://github.com/Dayto-G/SimpleSpawn/releases/latest)
+[Download the latest release](https://github.com/Dayto-G/Spawnerino/releases/latest)
 
-## Install
+## Install or upgrade
 
-1. Run Paper **26.3** with **Java 25 or newer**.
-2. Put `SimpleSpawn-1.2.0.jar` in the server's `plugins` folder.
-3. Restart the server.
-4. As an operator, stand at a safe location and run `/setspawn`.
+1. Stop your Paper **26.3** server (Java **25+**).
+2. Remove the old SimpleSpawn or Spawnerino JAR and install `Spawnerino-1.3.0.jar` in `plugins/`. Keep only one version installed.
+3. Keep the existing `plugins/SimpleSpawn/spawns.yml` when upgrading from SimpleSpawn.
+4. Start the server. On first startup, Spawnerino copies that file into `plugins/Spawnerino/spawns.yml`, including original-spawn backups, without modifying the old file.
+5. Check `/version Spawnerino`.
 
-## Commands and permission
+An existing Spawnerino data file is never overwritten by migration. If the old SimpleSpawn plugin is still installed, Spawnerino disables itself and asks you to remove the old JAR and restart. Existing entries without pitch default to level (0).
 
-- `/setspawn`: save your current block position, yaw, and pitch as this world's vanilla spawn.
-- `/setspawn x y z`: use coordinates in your current world and keep your current look direction.
-- `/setspawn x y z yaw`: set coordinates and horizontal facing, keeping your current pitch.
-- `/setspawn x y z yaw pitch`: set coordinates and both look angles.
-- Coordinates accept absolute numbers or relative values such as `~`, `~5`, and `~-5`. Decimal coordinates are floored to block positions, including negatives. Local `^` coordinates are not supported.
-- Yaw: `0` south, `90` west, `-90` east, `180` north. Pitch: `0` level, `-90` straight up, `90` straight down. Yaw wraps automatically; pitch must be between -90 and 90.
-- `/deletespawn`: restore the spawn that existed before the first `/setspawn` in this world. Repeating `/setspawn` preserves that original backup.
-- Both require `simplespawn.setspawn`, granted to operators by default. With LuckPerms: `/lp user PLAYER permission set simplespawn.setspawn true`.
-- In game, `/deletespawn` takes no arguments. Console and RCON commands require a loaded world name as the first argument.
-
-Examples:
+## In-game commands
 
 ```text
-/setspawn 100 64 -200
-/setspawn 100 64 -200 180 0
-/setspawn ~ ~ ~ 90 -15
+/setspawn
+/setspawn 100 67 99
+/setspawn 100 67 99 26 2
 /setspawn ~10 ~ ~-5
+/deletespawn
 ```
 
-### Console and RCON
+Plain `/setspawn` uses your current block and look direction. Coordinates keep your current yaw and pitch unless specified. Syntax: `/setspawn [x y z [yaw [pitch]]]`. Relative coordinates (`~`, `~5`, `~-5`) are supported for players; local `^` coordinates are not.
 
-Use these commands without a leading slash in the server console or RCON:
+Yaw: 0 south, 90 west, -90 east, 180 north. Pitch: 0 level, -90 straight up, 90 straight down. Yaw wraps; pitch must be between -90 and 90. Decimal coordinates are floored to blocks, including negatives.
+
+## Console and RCON
 
 ```text
 setspawn world 100 67 99 26 2
@@ -42,54 +36,40 @@ setspawn world 100 67 99
 deletespawn world
 ```
 
-Replace `world` with the loaded world's name (for example `world_nether`). Coordinates are mandatory and absolute; `~` and local `^` coordinates require a player context and are not accepted from console/RCON. Omitted yaw and pitch keep the selected world's existing spawn angles. Unknown or unloaded worlds are rejected. Console/RCON retain the same permission check. Command blocks and other non-player senders are not supported.
+Replace `world` with a loaded world's name. Console/RCON requires a world name and absolute coordinates; omitted angles keep that world's existing spawn direction. Unknown/unloaded worlds are rejected. Command blocks and other non-player senders are not supported.
 
-X and Z block positions must be between -29999984 and 29999984, and Y must be within the current world's build limits. Invalid inputs leave the saved spawn unchanged. These checks do not guarantee safe terrain or that a location is inside a custom world border.
+## Permissions and saved data
 
-Each world has a separate entry, identified by world UUID, in `plugins/SimpleSpawn/spawns.yml`. Changes save immediately and are reapplied on startup or world load. Deleting restores the previous spawn and removes that world's saved override. Keep this data file if you want to retain the original backup.
+Both commands require `spawnerino.setspawn`, granted to operators by default. Existing grants of `simplespawn.setspawn` remain supported as a legacy alias.
 
-This changes vanilla world spawn behavior: new players and eligible respawning players use it. Existing valid beds/respawn anchors still apply. Vanilla spawn rules can place players around the spawn block; it is not an exact-position teleport. It does not teleport existing players, force respawns, or change personal spawn points. Choose a safe spawn site. Both yaw and pitch are saved. Fractional coordinates are converted to block positions. Existing 1.0.0 data files still load; entries without a saved pitch default to level (0). Re-run `/setspawn` to capture your desired vertical look direction.
+With LuckPerms: `/lp user PLAYER permission set spawnerino.setspawn true`.
 
-## Build
+Each world has an independent entry, identified by UUID, in `plugins/Spawnerino/spawns.yml`. Changes save immediately and are reapplied on startup/world load. Repeated `/setspawn` preserves the original backup. `/deletespawn` restores that original spawn and removes the world's override.
 
-Install JDK 25+ and Maven 3.9+, then run from this folder:
+This changes vanilla world spawn behavior. Valid personal beds/respawn anchors still apply; vanilla rules may place players around the spawn block. It does not teleport existing players or force respawns. Choose safe terrain. X/Z block positions must be between -29999984 and 29999984; Y must fit the world's build limits. These checks do not verify terrain safety or custom world borders.
 
+## Build and releases
+
+Install JDK 25+ and Maven 3.9+, then run:
+
+```text
+mvn clean verify
 ```
-mvn clean package
-```
 
-Output: `target/SimpleSpawn-1.2.0.jar`. Paper API is provided by the server and is not bundled.
+Output: `target/Spawnerino-1.3.0.jar`. Paper API `26.3.build.230-stable` is provided by the server and not bundled. The compiler targets Java 25. The Java package remains unchanged for source compatibility.
 
-The project pins the verified published API `io.papermc.paper:paper-api:26.3.build.230-stable` and declares `api-version: '26.3'`. The compiler targets Java 25.
+The `Build and release` workflow builds and publishes an unpublished stable version (`X.Y.Z`) when `pom.xml`, `plugin.yml`, or the workflow changes on `main`. It also supports manual runs. Each release includes the JAR and SHA-256 checksum. Published versions are skipped and never overwritten.
 
-## Manual server checks
+For a new release, update the version in both `pom.xml` and `src/main/resources/plugin.yml`, update `RELEASE-NOTES.md`, and commit the changes together to `main`. A failed draft can be resumed by rerunning the same workflow run; a draft or tag for a different commit is rejected for review.
 
-1. With no permission, confirm both commands are denied.
-2. As an operator, note the original world spawn, run `/setspawn`, and check the saved world entry in `spawns.yml`.
-3. Restart the server and confirm the world spawn remains at the saved block, yaw, and pitch.
-4. Run `/setspawn` at a second location, then `/deletespawn`; confirm the original spawn is restored, including after restarting.
-5. Run `/deletespawn` again; expect the no-saved-spawn message.
-6. Repeat in another world; confirm entries are independent.
-7. From console or RCON, run `setspawn world 100 67 99 26 2`, restart, and check persistence. Run `deletespawn world` to check restoration.
-10. From RCON, try a missing world name, unknown world, and relative coordinates; confirm no saved spawn changes.
-8. Try explicit and relative coordinates and look angles, then restart and check persistence.
-9. Try incomplete arguments, `NaN`, out-of-range Y, and pitch `91`; confirm the saved spawn stays unchanged.
+## Verification
 
-## Version references (checked 2026-10-29)
+19 automated tests cover coordinate/angle parsing and one-time migration (original retained, new data preserved, missing legacy data, repeat startup, and copy failure). See `BUILD-VERIFICATION.txt`.
+
+Live server/player/RCON testing has not been performed. Check permissions, setting/restoring spawn, restart persistence, console commands, invalid inputs, and legacy-data migration on your server.
+
+## Paper version references
 
 - https://docs.papermc.io/paper/dev/project-setup/
 - https://docs.papermc.io/paper/dev/plugin-yml/
 - https://docs.papermc.io/paper/getting-started/
-- https://repo.papermc.io/repository/maven-public/io/papermc/paper/paper-api/maven-metadata.xml
-
-## Verification
-
-`mvn clean verify` runs the coordinate and angle parsing tests. See `BUILD-VERIFICATION.txt` for the build result. Live gameplay checks require a Paper server and player session.
-
-## Automatic releases
-
-The `Build and release` workflow runs on `main` when `pom.xml`, `plugin.yml`, or the workflow changes. It also supports manual runs from Actions. An unpublished stable version (`X.Y.Z`) is built with Java 25 and published as `vX.Y.Z`, with a JAR and SHA-256 checksum. Published versions are skipped and never overwritten.
-
-For the next release, update the version in **both** `pom.xml` and `src/main/resources/plugin.yml`, update `RELEASE-NOTES.md` for the change (including testing status), and commit them together to `main`. The initial workflow installation published v1.0.0. The job uses GitHub's built-in token with repository contents write permission; no extra token secret is required.
-
-If publishing fails after creating a draft, rerun the same workflow run to resume it. A draft or tag belonging to a different commit is rejected for review. Build details and failures are available under Actions. Gameplay testing remains a separate manual check.
