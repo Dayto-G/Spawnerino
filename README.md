@@ -1,6 +1,6 @@
 # Spawnerino
 
-A lightweight Paper plugin to set the world spawn location. Includes /setspawn and /deletespawn, with no **/spawn **command or teleport features.
+A lightweight Paper plugin to set the world spawn location. Includes /setspawn and /deletespawn, with no **/spawn ** command or teleport features.
 
 ## Installation
 
