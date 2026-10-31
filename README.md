@@ -1,6 +1,7 @@
 # Spawnerino
 
 A simple world-spawn plugin for **Paper 26.3 · Java 25+**. Spawns are saved across restarts.
+Spawnerino only changes the world spawn location. It does not include a /spawn command or teleport players.
 
 ## Installation
 
