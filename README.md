@@ -9,8 +9,6 @@ Spawnerino only changes the world spawn location. It does not include a /spawn c
 2. Stop your server, put the JAR in `plugins/`, and remove any older Spawnerino or SimpleSpawn JAR.
 3. Start your server.
 
-Upgrading from SimpleSpawn? Keep its data folder; saved spawns are copied automatically.
-
 ## Commands
 
 | In game | Action |
